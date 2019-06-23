@@ -9,7 +9,7 @@ DEBUG=true
 # Available modules : adc dac eic gloc i2c spi tc trng usart
 # Some modules such as gpio and flash are already compiled by default
 # and must not be added here.
-MODULES=i2c tc
+MODULES=i2c tc adc
 
 # Available utils modules : RingBuffer Servo
 UTILS_MODULES=
@@ -21,7 +21,8 @@ UTILS_MODULES=
 #     drivers/SDCard \
 #     drivers/GPS
 USER_MODULES=\
-	drivers/leds
+	drivers/leds \
+	drivers/servo
 
 # Path to the toolchain. If the tools (such as arm-none-eabi-g++) are
 # not in your default $PATH, you MUST define their location here.

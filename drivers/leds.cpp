@@ -34,7 +34,7 @@ namespace LEDs {
         _leds[POWER] = {
             .tc = TC_LED_POWER,
             .pin = PIN_LED_POWER,
-            .gain = 5
+            .gain = 3
         };
         _leds[OPEN] = {
             .tc = TC_LED_OPEN,
