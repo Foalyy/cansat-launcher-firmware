@@ -2,9 +2,12 @@
 #include <scif.h>
 #include <pm.h>
 #include <gpio.h>
+#include <i2c.h>
+#include <spi.h>
 #include "peripherals.h"
 #include "drivers/leds.h"
 #include "drivers/servo.h"
+#include "drivers/altimeter.h"
 
 int main() {
     Core::init();
@@ -15,6 +18,17 @@ int main() {
     LEDs::init();
     LEDs::on(LEDs::POWER);
 
+    // Init SPI
+    SPI::setPin(SPI::PinFunction::MISO, PIN_SPI_MISO);
+    SPI::setPin(SPI::PinFunction::MOSI, PIN_SPI_MOSI);
+    SPI::setPin(SPI::PinFunction::SCK, PIN_SPI_SCK);
+    SPI::enableMaster();
+
+    // Init I2C
+    I2C::setPin(I2C_PORT, I2C::PinFunction::SDA, PIN_I2C_SDA);
+    I2C::setPin(I2C_PORT, I2C::PinFunction::SCL, PIN_I2C_SCL);
+    I2C::enableMaster(I2C_PORT);
+
     // Init buttons
     GPIO::enableInput(PIN_BTN_OPEN, GPIO::Pulling::PULLUP);
     GPIO::enableInput(PIN_BTN_CLOSE, GPIO::Pulling::PULLUP);
@@ -22,6 +36,9 @@ int main() {
     // Init servo
     Servo::init();
     Servo::close();
+
+    // Init altimeter
+    Altimeter::init();
 
     // Initialization finished, start blinking the power led
     LEDs::blink(LEDs::POWER);
@@ -38,10 +55,8 @@ int main() {
         // Buttons
         if (GPIO::fallingEdge(PIN_BTN_OPEN)) {
             Servo::open();
-            lastTimeHatchStatusBlink = 0;
         } else if (GPIO::fallingEdge(PIN_BTN_CLOSE)) {
             Servo::close();
-            lastTimeHatchStatusBlink = 0;
         }
 
         // Hatch status leds blink
@@ -62,8 +77,9 @@ int main() {
             lastTimePowerBlink += DELAY_BLINK_POWER;
         }
 
-        // Exec LEDs driver
+        // Exec drivers
         LEDs::exec();
+        Altimeter::exec();
 
         // Sleep between two loop passes
         Core::sleep(1);
