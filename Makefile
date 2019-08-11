@@ -23,7 +23,10 @@ UTILS_MODULES=
 USER_MODULES=\
 	drivers/leds \
 	drivers/servo \
-	drivers/altimeter
+	drivers/battery \
+	drivers/altimeter \
+	drivers/telem \
+	drivers/lora/lora
 
 # Path to the toolchain. If the tools (such as arm-none-eabi-g++) are
 # not in your default $PATH, you MUST define their location here.

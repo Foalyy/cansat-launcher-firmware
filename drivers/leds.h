@@ -5,7 +5,7 @@
 
 namespace LEDs {
 
-    const int POWER = 0;
+    const int TELEM = 0;
     const int OPEN = 1;
     const int CLOSE = 2;
 

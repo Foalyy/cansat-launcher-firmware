@@ -4,10 +4,15 @@
 #include <gpio.h>
 #include <i2c.h>
 #include <spi.h>
+#include <adc.h>
 #include "peripherals.h"
 #include "drivers/leds.h"
 #include "drivers/servo.h"
+#include "drivers/battery.h"
 #include "drivers/altimeter.h"
+#include "drivers/telem.h"
+
+void error();
 
 int main() {
     Core::init();
@@ -16,7 +21,6 @@ int main() {
 
     // Init LEDs
     LEDs::init();
-    LEDs::on(LEDs::POWER);
 
     // Init SPI
     SPI::setPin(SPI::PinFunction::MISO, PIN_SPI_MISO);
@@ -33,30 +37,67 @@ int main() {
     GPIO::enableInput(PIN_BTN_OPEN, GPIO::Pulling::PULLUP);
     GPIO::enableInput(PIN_BTN_CLOSE, GPIO::Pulling::PULLUP);
 
+    // Init config switches
+    GPIO::enableInput(PIN_CFG_1, GPIO::Pulling::PULLUP);
+    GPIO::enableInput(PIN_CFG_2, GPIO::Pulling::PULLUP);
+    GPIO::enableInput(PIN_CFG_3, GPIO::Pulling::PULLUP);
+    GPIO::enableInput(PIN_CFG_4, GPIO::Pulling::PULLUP);
+
+    // Init battery measurement
+    ADC::init();
+    Battery::init();
+
     // Init servo
     Servo::init();
     Servo::close();
 
     // Init altimeter
-    Altimeter::init();
+    if (!Altimeter::init()) {
+        error();
+    }
 
-    // Initialization finished, start blinking the power led
-    LEDs::blink(LEDs::POWER);
+    // Init telem
+    if (!Telem::init()) {
+        error();
+    }
 
     // Current state
-    const unsigned long DELAY_BLINK_POWER = 1000;
-    Core::Time lastTimePowerBlink = 500;
     const unsigned long DELAY_BLINK_HATCH_STATUS = 1000;
     Core::Time lastTimeHatchStatusBlink = 0;
 
     // Main loop
     Core::Time t = Core::time();
     while (1) {
+        // Read the launcher ID from the config switches
+        int launcherID = (!GPIO::get(PIN_CFG_1)) | (!GPIO::get(PIN_CFG_2)) << 1 | (!GPIO::get(PIN_CFG_3)) << 2 | (!GPIO::get(PIN_CFG_4)) << 3;
+
+        // Telem
+        Telem::Command command = Telem::getCommand(launcherID);
+        if (command == Telem::Command::OPEN) {
+            Telem::sendAck(launcherID, command);
+            Servo::open();
+            LEDs::blink(LEDs::OPEN, 2);
+            LEDs::blink(LEDs::TELEM);
+
+        } else if (command == Telem::Command::CLOSE) {
+            Telem::sendAck(launcherID, command);
+            Servo::close();
+            LEDs::blink(LEDs::CLOSE, 2);
+            LEDs::blink(LEDs::TELEM);
+
+        } else if (command == Telem::Command::GET_STATUS) {
+            // Send the hatch status, the altitude and the temperature
+            Telem::sendStatus(launcherID, Servo::isOpen(), Altimeter::altitude(), Altimeter::temperature(), Battery::percent());
+            LEDs::blink(LEDs::TELEM);
+        }
+
         // Buttons
         if (GPIO::fallingEdge(PIN_BTN_OPEN)) {
             Servo::open();
+            LEDs::blink(LEDs::OPEN, 2);
         } else if (GPIO::fallingEdge(PIN_BTN_CLOSE)) {
             Servo::close();
+            LEDs::blink(LEDs::CLOSE, 2);
         }
 
         // Hatch status leds blink
@@ -70,18 +111,27 @@ int main() {
             lastTimeHatchStatusBlink += DELAY_BLINK_HATCH_STATUS;
         }
 
-        // Power led blink
-        t = Core::time();
-        if (t >= lastTimePowerBlink + DELAY_BLINK_POWER) {
-            LEDs::blink(LEDs::POWER);
-            lastTimePowerBlink += DELAY_BLINK_POWER;
-        }
-
         // Exec drivers
         LEDs::exec();
         Altimeter::exec();
+        Battery::exec();
 
         // Sleep between two loop passes
+        Core::sleep(1);
+    }
+}
+
+
+void error() {
+    const int DELAY = 300;
+    Core::Time lastTimeBlinked = 0;
+    while (true) {
+        Core::Time t = Core::time();
+        if (t > lastTimeBlinked + DELAY) {
+            LEDs::blink(LEDs::CLOSE);
+            lastTimeBlinked = t;
+        }
+        LEDs::exec();
         Core::sleep(1);
     }
 }

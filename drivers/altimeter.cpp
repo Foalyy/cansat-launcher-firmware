@@ -11,19 +11,21 @@ namespace Altimeter {
     uint32_t _pressureRaw = 0;
     float _pressure = 0;
     float _pressure0 = 0;
-    int _altitude = 0;
+    float _altitude = 0;
     uint32_t _temperatureRaw = 0;
     float _temperature = 0;
     CalibCoefsRaw _calibCoefsRaw;
     CalibCoefs _calibCoefs;
     Core::Time _lastTimeMeasured = 0;
     const unsigned long DELAY_MEASURE = 1000;
+    Core::Time _lastTimeCheckedStatus = 0;
+    const unsigned long DELAY_CHECK_STATUS = 100;
 
 
     uint8_t readRegister(uint8_t reg);
     void writeRegister(uint8_t reg, uint8_t value);
     
-    
+
     bool init() {
         uint8_t chipId = readRegister(REG_CHIP_ID);
         if (chipId != 0x50) {
@@ -80,17 +82,21 @@ namespace Altimeter {
     }
 
     void exec() {
-        // Send a forced measurement command everytime the delay expires
         Core::Time t = Core::time();
+
+        // Send a forced measurement command everytime the delay expires
         if (t >= _lastTimeMeasured + DELAY_MEASURE) {
             writeRegister(REG_PWR_CTRL, 0b00100011);
             _lastTimeMeasured = t;
         }
 
         // If some data is ready, read it and compute the pressure, altitude and temperature
-        uint8_t status = readRegister(REG_STATUS);
-        if (status & (1 << REG_STATUS_DRDY_PRESS) && status & (1 << REG_STATUS_DRDY_TEMP)) {
-            readData();
+        if (t >= _lastTimeCheckedStatus + DELAY_CHECK_STATUS) {
+            uint8_t status = readRegister(REG_STATUS);
+            if (status & (1 << REG_STATUS_DRDY_PRESS) && status & (1 << REG_STATUS_DRDY_TEMP)) {
+                readData();
+            }
+            _lastTimeCheckedStatus = t;
         }
     }
 
@@ -98,7 +104,7 @@ namespace Altimeter {
         return _pressure;
     }
 
-    int altitude() {
+    float altitude() {
         return _altitude;
     }
 

@@ -31,9 +31,9 @@ namespace LEDs {
 
     void init() {
         memset(_leds, 0, sizeof(_leds));
-        _leds[POWER] = {
-            .tc = TC_LED_POWER,
-            .pin = PIN_LED_POWER,
+        _leds[TELEM] = {
+            .tc = TC_LED_TELEM,
+            .pin = PIN_LED_TELEM,
             .gain = 3
         };
         _leds[OPEN] = {

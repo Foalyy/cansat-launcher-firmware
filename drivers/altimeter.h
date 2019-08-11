@@ -83,7 +83,7 @@ namespace Altimeter {
     bool init();
     void exec();
     float pressure();
-    int altitude();
+    float altitude();
     float temperature();
     void readData();
 

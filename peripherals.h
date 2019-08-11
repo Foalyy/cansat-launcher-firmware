@@ -17,10 +17,10 @@ const GPIO::Pin PIN_SPI_MOSI = {GPIO::Port::A, 28, GPIO::Periph::A};
 const GPIO::Pin PIN_SPI_SCK = {GPIO::Port::A, 29, GPIO::Periph::A};
 
 // LEDs
-const TC::Channel TC_LED_POWER = TC::TC0_0A;
+const TC::Channel TC_LED_TELEM = TC::TC0_0A;
 const TC::Channel TC_LED_OPEN = TC::TC0_0B;
 const TC::Channel TC_LED_CLOSE = TC::TC0_1A;
-const GPIO::Pin PIN_LED_POWER = {GPIO::Port::A,  8, GPIO::Periph::B};
+const GPIO::Pin PIN_LED_TELEM = {GPIO::Port::A,  8, GPIO::Periph::B};
 const GPIO::Pin PIN_LED_OPEN = {GPIO::Port::A,  9, GPIO::Periph::B};
 const GPIO::Pin PIN_LED_CLOSE = {GPIO::Port::A, 10, GPIO::Periph::B};
 
